@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, time
 from pprint import pprint
 from functools import reduce
 
@@ -8,7 +8,6 @@ from functools import reduce
 
 __author__ = "Karthik M A M ( https://www.github.com/KarthikMAM )"
 
-
 def getData(url, more_data = False):
     """
     Download the data and store it in local storage 
@@ -17,23 +16,26 @@ def getData(url, more_data = False):
     if not hasattr(getData, 'cache'): getData.cache = {}
 
     def dwnlData(url):
-        if os.path.isfile('data\\' + url + '.json'): 
-            with open('data\\' + url + '.json', 'r') as file:
+        if getData.cache.get(url, False) != False: return getData.cache[url]
+        if os.path.isfile('data/' + url + '.json'): 
+            with open('data/' + url + '.json', 'r') as file:
                 data = eval(file.read())
         else:
             data = requests.get('http://data.moviebuff.com/' + url).json()
 
-            with open('data\\' + url + '.json', 'w') as file:
+            with open('data/' + url + '.json', 'w') as file:
                 file.write(str(data))
 
         if not more_data:
-            data = data['cast'] if data['type'] == 'Movie' else data['movies']
+            data = (data['cast'] + data['crew']) if data['type'] == 'Movie' else data['movies']
             
             data = set(list(map(lambda x: x['url'] , data)))
 
+        getData.cache[url] = data
+
         return data
 
-    return getData.cache.get(url, dwnlData(url))
+    return dwnlData(url)
 
 def matchFunc(start, end):
     """
